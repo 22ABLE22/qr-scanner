@@ -1,4 +1,4 @@
-/* qr-lite — client side QR decoding.
+/* qr-scanner — client side QR decoding.
    Pass 1: jsQR over canvas pixels (small, fast, good enough for most screenshots).
    Pass 2: ZXing WebAssembly, loaded only when pass 1 misses (rotated, inverted, low contrast). */
 (function () {
@@ -167,7 +167,7 @@
       var blob = new Blob([items.map(function (i) { return i.text; }).join('\n')], { type: 'text/plain' });
       var a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = 'qr-lite.txt';
+      a.download = 'qr-scanner.txt';
       a.click();
       setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
     });

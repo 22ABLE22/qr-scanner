@@ -1,6 +1,6 @@
 {
-  "name": "qr-lite — QR reader",
-  "short_name": "qr-lite",
+  "name": "qr-scanner — QR reader",
+  "short_name": "qr-scanner",
   "description": "Read a QR code without uploading the image.",
   "start_url": "./",
   "scope": "./",

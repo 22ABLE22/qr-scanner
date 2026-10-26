@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>qr-lite — read a QR code without uploading it</title>
+<title>qr-scanner — read a QR code without uploading it</title>
 <meta name="description" content="Drop a QR image and get the link. Decoding runs entirely in your browser, so the picture never leaves your device. No account, no upload, no tracking.">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
-<meta property="og:title" content="qr-lite — read a QR code without uploading it">
+<meta property="og:title" content="qr-scanner — read a QR code without uploading it">
 <meta property="og:description" content="Drop a QR image and get the link. Everything runs in this tab, so the picture never leaves your device.">
 <meta property="og:image" content="assets/og.png">
 <meta name="twitter:card" content="summary_large_image">
@@ -301,12 +301,12 @@ footer{border-top:1px solid var(--line);padding:40px 0 64px;margin-top:32px}
 
 <div class="nav">
   <div class="nav-bar">
-    <a class="brand" href="./" aria-label="qr-lite home">
+    <a class="brand" href="./" aria-label="qr-scanner home">
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="M3 3h7v7H3V3Zm11 0h7v7h-7V3ZM3 14h7v7H3v-7Z" stroke="#F5F5F4" stroke-width="1.6"/>
         <path d="M14 14h3v3h-3v-3Zm4 4h3v3h-3v-3Z" fill="#D6FF4B"/>
       </svg>
-      <span>qr<span class="dot">·</span>lite</span>
+      <span>qr<span class="dot">·</span>scanner</span>
     </a>
     <div class="nav-links">
       <a href="#how">How it works</a>
@@ -374,7 +374,7 @@ footer{border-top:1px solid var(--line);padding:40px 0 64px;margin-top:32px}
     </div>
   </header>
 
-  <section class="tagline" aria-label="Why qr-lite exists">
+  <section class="tagline" aria-label="Why qr-scanner exists">
     <div class="wrap">
       <p id="tagline">The picture stays on your device, and the whole decoder is smaller than one photo.</p>
     </div>
@@ -426,12 +426,12 @@ footer{border-top:1px solid var(--line);padding:40px 0 64px;margin-top:32px}
 
   <section class="section" id="deploy">
     <div class="wrap reveal">
-      <h2>Ship your own copy in three commands</h2>
+      <h2>Fork it and ship your own copy</h2>
       <p class="sub">No build step, no server, no dependencies to install. The folder is the site.</p>
-      <pre class="code"><code>git init &amp;&amp; git add . &amp;&amp; git commit -m "qr-lite"
-git remote add origin git@github.com:&lt;you&gt;/qr-lite.git
-git push -u origin main</code></pre>
-      <p class="sub">Then in the repository open Settings, Pages, set the source to the main branch at the root. It goes live at <span class="kbd">https://&lt;you&gt;.github.io/qr-lite/</span> with HTTPS and a service worker included.</p>
+      <pre class="code"><code>git clone https://github.com/22ABLE22/qr-scanner.git
+cd qr-scanner
+# edit, commit, push</code></pre>
+      <p class="sub">Then in the repository open Settings, Pages, set the source to the main branch at the root. It goes live at <span class="kbd">https://&lt;you&gt;.github.io/qr-scanner/</span> with HTTPS and a service worker included.</p>
     </div>
   </section>
 
@@ -454,9 +454,9 @@ git push -u origin main</code></pre>
 
 <footer>
   <div class="wrap foot">
-    <p>Static files, no backend, MIT licensed. Built as a smaller answer to cli.im/deqr.</p>
+    <p>Static files, no backend. Built as a smaller answer to cli.im/deqr.</p>
     <nav aria-label="Footer">
-      <a href="#deploy">Deploy</a>
+      <a href="https://github.com/22ABLE22/qr-scanner" rel="noopener">Source</a>
       <a href="privacy.html">Privacy</a>
       <a href="404.html">404</a>
     </nav>
