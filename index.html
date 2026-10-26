@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>qr-lite — read a QR code without uploading it</title>
+<meta name="description" content="Drop a QR image and get the link. Decoding runs entirely in your browser, so the picture never leaves your device. No account, no upload, no tracking.">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="qr-lite — read a QR code without uploading it">
+<meta property="og:description" content="Drop a QR image and get the link. Everything runs in this tab, so the picture never leaves your device.">
+<meta property="og:image" content="assets/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preload" href="assets/geist.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+@font-face{
+  font-family:Geist;
+  src:url("assets/geist.woff2") format("woff2");
+  font-weight:100 900;
+  font-style:normal;
+  font-display:swap;
+}
+:root{
+  --bg:#000000;
+  --surface-1:#181818;
+  --surface-2:#1F1F1F;
+  --surface-3:#272727;
+  --line:#313131;
+  --text:#F5F5F4;
+  --muted:#9B9B9B;
+  --dim:#6B6B6B;
+  --accent:#D6FF4B;
+  --accent-ink:#131209;
+  --curve:cubic-bezier(0.22,1,0.36,1);
+  --r-2xl:16px;
+  --r-xl:12px;
+  --r-lg:8px;
+}
+*{box-sizing:border-box}
+html{background:var(--bg);color-scheme:dark}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:Geist,ui-sans-serif,system-ui,sans-serif;
+  font-size:16px;
+  line-height:24px;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+h1,h2,h3,p{margin:0}
+a{color:inherit}
+.skip{
+  position:absolute;left:-9999px;top:0;z-index:100;
+  background:var(--accent);color:var(--accent-ink);
+  padding:8px 12px;border-radius:var(--r-lg);font-weight:600;text-decoration:none;
+}
+.skip:focus{left:16px;top:16px}
+.wrap{width:100%;max-width:1080px;margin:0 auto;padding:0 24px}
+
+/* ---------- nav ---------- */
+.nav{
+  position:fixed;inset:16px 0 auto;z-index:50;display:flex;justify-content:center;
+  pointer-events:none;
+}
+.nav-bar{
+  pointer-events:auto;
+  display:flex;align-items:center;gap:8px;
+  padding:8px 8px 8px 16px;
+  border-radius:var(--r-2xl);
+  background:rgba(24,24,24,0.72);
+  border:1px solid var(--line);
+  backdrop-filter:blur(18px) saturate(140%);
+  -webkit-backdrop-filter:blur(18px) saturate(140%);
+  box-shadow:0 8px 24px rgba(0,0,0,0.45);
+}
+.brand{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;line-height:20px;letter-spacing:-0.01em;text-decoration:none}
+.brand svg{width:18px;height:18px;flex:none}
+.brand span.dot{color:var(--accent)}
+.nav-links{display:none;gap:4px;margin-left:8px}
+.nav-links a{
+  font-size:14px;line-height:20px;color:var(--muted);text-decoration:none;
+  padding:4px 8px;border-radius:var(--r-lg);
+  transition:color 300ms var(--curve),background-color 300ms var(--curve);
+}
+.nav-links a:hover{color:var(--text);background:var(--surface-3)}
+.nav-cta{
+  margin-left:8px;font-size:14px;line-height:20px;font-weight:500;
+  color:var(--muted);text-decoration:none;
+  padding:4px 8px;border-radius:var(--r-lg);
+  transition:color 300ms var(--curve),background-color 300ms var(--curve);
+}
+.nav-cta:hover{color:var(--text);background:var(--surface-3)}
+.nav-cta:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.nav-toggle{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:36px;height:36px;padding:0;margin-left:4px;
+  background:var(--surface-3);color:var(--text);border:0;border-radius:var(--r-lg);cursor:pointer;
+  transition:background-color 300ms var(--curve);
+}
+.nav-toggle:hover{background:#3A3A3A}
+.nav-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.nav-toggle svg{width:18px;height:18px}
+.nav-toggle .l1,.nav-toggle .l2{transition:transform 500ms var(--curve),opacity 500ms var(--curve);transform-origin:12px 12px}
+.nav-toggle[aria-expanded="true"] .l1{transform:rotate(45deg) translateY(4px)}
+.nav-toggle[aria-expanded="true"] .l2{transform:rotate(-45deg) translateY(-4px)}
+@media (min-width:720px){.nav-toggle{display:none}}
+@media (max-width:719px){.nav-cta{display:none}}
+.menu{
+  position:fixed;inset:0;z-index:45;
+  background:rgba(0,0,0,0.94);
+  backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
+  display:flex;flex-direction:column;justify-content:center;gap:8px;
+  padding:96px 24px 48px;
+  opacity:0;visibility:hidden;
+  transition:opacity 500ms var(--curve),visibility 500ms var(--curve);
+}
+.menu.open{opacity:1;visibility:visible}
+.menu a{
+  font-size:30px;line-height:36px;font-weight:600;letter-spacing:-0.02em;
+  color:var(--text);text-decoration:none;padding:8px 0;
+  opacity:0;transform:translateY(24px);
+  transition:opacity 500ms var(--curve),transform 500ms var(--curve);
+}
+.menu.open a{opacity:1;transform:none}
+.menu.open a:nth-child(1){transition-delay:60ms}
+.menu.open a:nth-child(2){transition-delay:120ms}
+.menu.open a:nth-child(3){transition-delay:180ms}
+.menu.open a:nth-child(4){transition-delay:240ms}
+.menu a:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:var(--r-lg)}
+@media (min-width:720px){.nav-links{display:flex}}
+
+/* ---------- hero ---------- */
+.hero{padding:152px 0 40px}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:12px;line-height:16px;letter-spacing:0.08em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:24px;
+}
+.eyebrow i{width:6px;height:6px;border-radius:999px;background:var(--accent);display:block}
+h1{
+  font-size:36px;line-height:40px;font-weight:600;letter-spacing:-0.03em;
+  max-width:680px;text-wrap:balance;
+  background:linear-gradient(90deg,#FFFFFF 0%,#9B9B9B 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.lede{max-width:680px;margin-top:16px;color:var(--muted);font-size:16px;line-height:24px;text-wrap:pretty}
+@media (min-width:720px){
+  h1{font-size:48px;line-height:1}
+  .hero{padding-top:176px}
+}
+
+/* ---------- drop zone ---------- */
+.deck{margin-top:40px;max-width:760px}
+.drop{
+  position:relative;
+  border:1px solid var(--line);
+  border-radius:var(--r-2xl);
+  background:var(--surface-1);
+  padding:24px;
+  transition:border-color 300ms var(--curve),background-color 300ms var(--curve),transform 500ms var(--curve);
+}
+.drop.is-over{border-color:var(--accent);background:var(--surface-2)}
+.drop-inner{display:flex;flex-direction:column;gap:24px;align-items:flex-start}
+@media (min-width:720px){.drop-inner{flex-direction:row;align-items:center;justify-content:space-between;gap:32px}}
+.drop h2{font-size:20px;line-height:28px;font-weight:600;letter-spacing:-0.01em;text-wrap:balance}
+.drop p{color:var(--muted);font-size:14px;line-height:20px;margin-top:4px;text-wrap:pretty}
+.drop-actions{display:flex;flex-wrap:wrap;gap:8px;width:100%}
+@media (min-width:720px){.drop-actions{flex-direction:column;align-items:stretch;width:216px;flex:none}}
+.drop-actions .btn{justify-content:center}
+.btn{
+  appearance:none;border:0;cursor:pointer;font:inherit;font-size:16px;line-height:24px;font-weight:600;
+  padding:8px 12px;border-radius:var(--r-xl);
+  display:inline-flex;align-items:center;gap:8px;
+  transition:transform 300ms var(--curve),background-color 300ms var(--curve),color 300ms var(--curve),opacity 300ms var(--curve);
+}
+.btn:active{transform:translateY(1px)}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn-primary{background:var(--accent);color:var(--accent-ink)}
+.btn-primary:hover{background:#E2FF78}
+.btn-ghost{background:var(--surface-3);color:var(--text)}
+.btn-ghost:hover{background:#3A3A3A}
+.btn[disabled]{opacity:0.45;cursor:not-allowed}
+.btn svg{width:16px;height:16px;flex:none}
+.hint{margin-top:12px;font-size:12px;line-height:16px;color:var(--dim)}
+.proof{display:flex;flex-wrap:wrap;gap:8px 24px;margin-top:24px}
+.proof-item{display:inline-flex;align-items:center;gap:8px;font-size:14px;line-height:20px;color:var(--muted)}
+.proof-item svg{width:16px;height:16px;flex:none;color:var(--accent)}
+.cam{margin-top:24px;border:1px solid var(--line);border-radius:var(--r-xl);overflow:hidden;background:#000}
+.cam video{display:block;width:100%;max-height:420px;object-fit:cover;background:#000}
+.cam-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:12px}
+.cam-note{font-size:12px;line-height:16px;color:var(--muted);max-width:420px}.kbd{
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;
+  border:1px solid var(--line);border-radius:4px;padding:0 4px;color:var(--muted);
+}
+.code{
+  margin-top:24px;padding:16px;border-radius:var(--r-xl);
+  border:1px solid var(--line);background:var(--surface-1);
+  overflow:auto;
+}
+.code code{
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:14px;line-height:24px;color:var(--text);white-space:pre;
+}
+
+/* ---------- result ---------- */
+.result{margin-top:24px;display:none}
+.result.show{display:block;animation:rise 500ms var(--curve) both}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.card{
+  border:1px solid var(--line);border-radius:var(--r-2xl);background:var(--surface-1);
+  padding:24px;
+}
+.card-head{display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.tag{
+  font-size:12px;line-height:16px;letter-spacing:0.06em;text-transform:uppercase;color:var(--dim);
+}
+.tag.ok{color:var(--accent)}
+.preview{display:flex;gap:16px;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap}
+.preview img{
+  width:96px;height:96px;object-fit:contain;border-radius:var(--r-lg);
+  background:var(--surface-3);border:1px solid var(--line);
+}
+.out{
+  flex:1 1 240px;min-width:0;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:14px;line-height:20px;
+  background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-lg);
+  padding:12px;word-break:break-all;max-height:160px;overflow:auto;white-space:pre-wrap;
+}
+.kind{font-size:12px;line-height:16px;color:var(--dim);margin-top:8px}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.engine{font-size:12px;line-height:16px;color:var(--dim)}
+.error{border-color:#4A2323;background:#1A1212}
+.error .tag{color:#FF8A8A}
+
+/* ---------- tagline reveal ---------- */
+.tagline{padding:96px 0 40px}
+.tagline p{
+  font-size:36px;line-height:40px;font-weight:600;letter-spacing:-0.03em;
+  max-width:680px;text-wrap:balance;color:var(--muted);
+}
+.tagline .w{display:inline-block;opacity:0.28;transition:opacity 500ms var(--curve),color 500ms var(--curve);color:var(--muted)}
+.tagline .w.on{opacity:1;color:var(--text)}
+@media (min-width:720px){.tagline p{font-size:48px;line-height:1}}
+
+/* ---------- sections ---------- */
+section{scroll-margin-top:96px}
+.section{padding:64px 0}
+.section h2{font-size:30px;line-height:36px;font-weight:600;letter-spacing:-0.02em;max-width:680px;text-wrap:balance}
+.section .sub{color:var(--muted);margin-top:8px;max-width:680px;font-size:16px;line-height:24px;text-wrap:pretty}
+.grid{display:grid;gap:16px;margin-top:32px}
+@media (min-width:720px){.grid.cols-3{grid-template-columns:repeat(3,1fr)}}
+.tile{
+  border:1px solid var(--line);border-radius:var(--r-2xl);background:var(--surface-1);padding:24px;
+}
+.tile .num{
+  font-size:12px;line-height:16px;color:var(--dim);letter-spacing:0.08em;text-transform:uppercase;
+}
+.tile h3{font-size:18px;line-height:28px;font-weight:600;margin-top:8px;letter-spacing:-0.01em}
+.tile p{color:var(--muted);font-size:14px;line-height:20px;margin-top:8px;text-wrap:pretty}
+.tile .big{font-size:30px;line-height:36px;font-weight:600;letter-spacing:-0.02em;color:var(--text);margin-top:8px}
+.tile .big small{font-size:14px;line-height:20px;color:var(--dim);font-weight:400;margin-left:4px}
+
+/* ---------- faq ---------- */
+.faq{margin-top:32px;border-top:1px solid var(--line)}
+.faq details{border-bottom:1px solid var(--line)}
+.faq summary{
+  cursor:pointer;list-style:none;padding:16px 0;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  font-size:16px;line-height:24px;font-weight:500;
+}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:var(--r-lg)}
+.faq .chev{flex:none;width:16px;height:16px;color:var(--dim);transition:transform 500ms var(--curve)}
+.faq details[open] .chev{transform:rotate(45deg)}
+.faq p{color:var(--muted);font-size:14px;line-height:20px;padding-bottom:16px;max-width:680px;text-wrap:pretty}
+
+/* ---------- footer ---------- */
+footer{border-top:1px solid var(--line);padding:40px 0 64px;margin-top:32px}
+.foot{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
+.foot p{color:var(--dim);font-size:14px;line-height:20px}
+.foot nav{display:flex;flex-wrap:wrap;gap:16px}
+.foot a{color:var(--muted);text-decoration:none;font-size:14px;line-height:20px;transition:color 300ms var(--curve)}
+.foot a:hover{color:var(--text)}
+
+/* reveals */
+.reveal{opacity:0;transform:translateY(32px);transition:opacity 700ms var(--curve),transform 700ms var(--curve)}
+.reveal.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){
+  *{transition-duration:1ms !important;animation-duration:1ms !important}
+  .reveal{opacity:1;transform:none}
+  .tagline .w{opacity:1;color:var(--text)}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#tool">Skip to the decoder</a>
+
+<div class="nav">
+  <div class="nav-bar">
+    <a class="brand" href="./" aria-label="qr-lite home">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M3 3h7v7H3V3Zm11 0h7v7h-7V3ZM3 14h7v7H3v-7Z" stroke="#F5F5F4" stroke-width="1.6"/>
+        <path d="M14 14h3v3h-3v-3Zm4 4h3v3h-3v-3Z" fill="#D6FF4B"/>
+      </svg>
+      <span>qr<span class="dot">·</span>lite</span>
+    </a>
+    <div class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#why">Why it is small</a>
+      <a href="#deploy">Deploy</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <a class="nav-cta" href="#deploy">Deploy your own</a>
+    <button class="nav-toggle" id="nav-toggle" type="button" aria-expanded="false" aria-controls="mobile-menu" aria-label="Open menu">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path class="l1" d="M4 8h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path class="l2" d="M4 16h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</div>
+
+<main>
+  <div class="menu" id="mobile-menu" aria-hidden="true">
+    <a href="#how">How it works</a>
+    <a href="#why">Why it is small</a>
+    <a href="#deploy">Deploy</a>
+    <a href="#faq">FAQ</a>
+  </div>
+  <header class="hero">
+    <div class="wrap">
+      <div class="eyebrow"><i></i> Client side decoder</div>
+      <h1>Read the QR code<br>without sending it anywhere</h1>
+      <p class="lede">Drop a screenshot, a photo, or a downloaded poster. The link comes back in milliseconds, and the image never leaves this tab.</p>
+
+      <div class="deck" id="tool">
+        <div class="drop" id="drop">
+          <div class="drop-inner">
+            <div>
+              <h2>Drop a QR image here</h2>
+              <p>PNG, JPEG, WebP, GIF, AVIF, or SVG. You can paste a screenshot instead.</p>
+            </div>
+            <div class="drop-actions">
+              <button class="btn btn-primary" id="pick" type="button">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4m0 0L7 9m5-5 5 5M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Choose an image
+              </button>
+              <button class="btn btn-ghost" id="paste" type="button">Paste from clipboard</button>
+              <button class="btn btn-ghost" id="camera" type="button" hidden>
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 8.5h2.2l1.3-2h9l1.3 2H20a1 1 0 0 1 1 1V18a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="13.5" r="3.2" stroke="currentColor" stroke-width="1.8"/></svg>
+                Use camera
+              </button>
+            </div>
+          </div>
+          <input id="file" type="file" accept="image/*" hidden>
+          <div class="cam" id="cam" hidden>
+            <video id="cam-video" playsinline muted></video>
+            <div class="cam-bar">
+              <p class="cam-note" id="cam-note">Point the camera at a QR code. Frames are decoded here, never sent.</p>
+              <button class="btn btn-ghost" id="cam-stop" type="button">Stop camera</button>
+            </div>
+          </div>
+        </div>
+        <p class="hint">Tip: press <span class="kbd">Ctrl</span> <span class="kbd">V</span> on this page to decode whatever you just copied.</p>
+
+        <div class="result" id="result" role="status" aria-live="polite"></div>
+      </div>
+      <div class="proof">
+        <span class="proof-item"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 5 6v5.5c0 4.2 2.9 7.6 7 9.5 4.1-1.9 7-5.3 7-9.5V6l-7-3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Image never uploaded</span>
+        <span class="proof-item"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12a8 8 0 0 1 13.7-5.6M20 12a8 8 0 0 1-13.7 5.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M17 4v3h-3M7 20v-3h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Works offline</span>
+        <span class="proof-item"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M13 3 4 14h6l-1 7 9-11h-6l1-7Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg> About 95 KB first load</span>
+      </div>
+    </div>
+  </header>
+
+  <section class="tagline" aria-label="Why qr-lite exists">
+    <div class="wrap">
+      <p id="tagline">The picture stays on your device, and the whole decoder is smaller than one photo.</p>
+    </div>
+  </section>
+
+  <section class="section" id="how">
+    <div class="wrap reveal">
+      <h2>Three steps, no round trip</h2>
+      <p class="sub">The browser already has everything it needs to turn pixels into text.</p><div class="grid cols-3">
+        <article class="tile">
+          <div class="num">Step one</div>
+          <h3>Drop the image</h3>
+          <p>Drag a file, paste a screenshot, or pick from the camera roll on a phone. Nothing is read until you choose it.</p>
+        </article>
+        <article class="tile">
+          <div class="num">Step two</div>
+          <h3>Decode locally</h3>
+          <p>Canvas pixels go to a small JavaScript decoder first. A larger WebAssembly engine loads only when the first pass misses.</p>
+        </article>
+        <article class="tile">
+          <div class="num">Step three</div>
+          <h3>Take the text</h3>
+          <p>Copy it, open it, or save it as a file. Links are opened in a new tab with no referrer and no opener.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="why">
+    <div class="wrap reveal">
+      <h2>Why it stays small</h2>
+      <p class="sub">Most QR sites ship a whole app. This one ships a decoder and a text box.</p>
+      <div class="grid cols-3">
+        <article class="tile">
+          <div class="big">95 KB <small>first load</small></div>
+          <p>Page, styles, font, and the JavaScript decoder together, compressed. That decoder alone is 251 KB raw and handles almost every clean QR image.</p>
+        </article>
+        <article class="tile">
+          <div class="big">1 MB <small>only on demand</small></div>
+          <p>The WebAssembly engine covers rotated, inverted, and low contrast codes. It is fetched the first time it is needed, then cached.</p>
+        </article>
+        <article class="tile">
+          <div class="big">0 <small>network calls</small></div>
+          <p>No image upload, no analytics, no fonts from a CDN. Load the page once and it keeps working offline.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="deploy">
+    <div class="wrap reveal">
+      <h2>Ship your own copy in three commands</h2>
+      <p class="sub">No build step, no server, no dependencies to install. The folder is the site.</p>
+      <pre class="code"><code>git init &amp;&amp; git add . &amp;&amp; git commit -m "qr-lite"
+git remote add origin git@github.com:&lt;you&gt;/qr-lite.git
+git push -u origin main</code></pre>
+      <p class="sub">Then in the repository open Settings, Pages, set the source to the main branch at the root. It goes live at <span class="kbd">https://&lt;you&gt;.github.io/qr-lite/</span> with HTTPS and a service worker included.</p>
+    </div>
+  </section>
+
+  <section class="section" id="faq">
+    <div class="wrap reveal">
+      <h2>Questions people ask before dropping a code</h2>
+      <div class="faq">
+        <details><summary>Does my image get uploaded anywhere?<svg class="chev" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></summary><p>No. The file is read with the browser File API and drawn to a canvas that stays in memory. There is no upload endpoint in the code, and the page works with the network switched off after the first load.</p></details>
+        <details><summary>Can I scan with my phone camera instead?<svg class="chev" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></summary><p>Yes, on browsers that support it. Open the camera from the same page and hold the code in frame. Camera access is requested only after you tap the button, and frames are decoded in memory at the same place as files.</p></details>
+        <details><summary>Does it work offline?<svg class="chev" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></summary><p>After the first visit the page and the JavaScript decoder are cached by the service worker, so it opens on a plane or in a basement. The WebAssembly engine is cached the first time it downloads.</p></details>
+        <details><summary>Which image formats are supported?<svg class="chev" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></summary><p>Whatever your browser can draw: PNG, JPEG, WebP, GIF, AVIF, BMP, and SVG. Animated files are decoded from their first frame.</p></details>
+        <details><summary>Can it read more than one code in a picture?<svg class="chev" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></summary><p>The fast pass returns the first code it finds. The WebAssembly pass can return several, and every result gets its own row with copy and open buttons.</p></details>
+        <details><summary>What makes a code unreadable?<svg class="chev" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></summary><p>Glare, motion blur, or a photo taken at a steep angle. Cropping to the code and taking a second, sharper shot fixes most failures. Codes with heavy artistic overlays on the finder patterns are the hard limit.</p></details>
+        <details><summary>Is there a file size limit?<svg class="chev" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></summary><p>Large photos are downscaled to fit a 1600 pixel canvas before decoding, which keeps memory flat. A 40 MB photo and a 4 KB screenshot behave the same.</p></details>
+        <details><summary>Can I host my own copy?<svg class="chev" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></summary><p>Yes. The whole site is static files, so GitHub Pages, Cloudflare Pages, or a USB stick all work. Fork it, replace the sample, and push.</p></details>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <p>Static files, no backend, MIT licensed. Built as a smaller answer to cli.im/deqr.</p>
+    <nav aria-label="Footer">
+      <a href="#deploy">Deploy</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="404.html">404</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="vendor/jsQR.js" defer></script>
+<script src="app.js" defer></script>
+</body>
+</html>

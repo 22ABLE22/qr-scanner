@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy — qr-lite</title>
+<meta name="description" content="qr-lite has no upload endpoint, no analytics, and no cookies. Images are decoded in the browser tab.">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<style>
+@font-face{font-family:Geist;src:url("assets/geist.woff2") format("woff2");font-weight:100 900;font-style:normal;font-display:swap}
+:root{--bg:#000;--surface:#181818;--line:#313131;--text:#F5F5F4;--muted:#9B9B9B;--dim:#6B6B6B;--accent:#D6FF4B;--accent-ink:#131209;--curve:cubic-bezier(0.22,1,0.36,1)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Geist,ui-sans-serif,system-ui,sans-serif;font-size:16px;line-height:24px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:680px;margin:0 auto;padding:96px 24px 64px}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+.back{font-size:14px;line-height:20px;color:var(--muted);display:inline-flex;gap:8px;align-items:center;margin-bottom:32px}
+h1{font-size:36px;line-height:40px;font-weight:600;letter-spacing:-0.03em;margin:0;text-wrap:balance}
+h2{font-size:20px;line-height:28px;font-weight:600;letter-spacing:-0.01em;margin:40px 0 0}
+p{color:var(--muted);margin:12px 0 0;text-wrap:pretty}
+ul{color:var(--muted);margin:12px 0 0;padding-left:20px}
+li{margin:8px 0}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px;background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:0 4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="./">← Back to the decoder</a>
+  <h1>Privacy</h1>
+  <p>Last updated 26 October 2026.</p>
+
+  <h2>What happens to your image</h2>
+  <p>Nothing leaves the tab. The file is opened with the browser File API, drawn onto a canvas, and the pixels are handed to a decoder that runs in the same page. There is no upload endpoint anywhere in the code, so there is no server that could receive a picture.</p>
+
+  <h2>What is stored</h2>
+  <ul>
+    <li>No cookies, no local storage, no session storage.</li>
+    <li>No analytics, no pixels, no third party scripts.</li>
+    <li>A service worker caches the page and the decoder files so the tool works offline. The cache holds code only, never an image you dropped.</li>
+  </ul>
+
+  <h2>Network requests the page makes</h2>
+  <p>On a first visit it fetches its own files from the same origin: HTML, one font, the stylesheet, <code>jsQR.js</code>, and the service worker. The 1 MB WebAssembly engine is fetched only if the fast decoder fails on your image. There are no calls to any other host.</p>
+
+  <h2>Camera</h2>
+  <p>The camera is opened only after you press the camera button, and the permission prompt comes from your browser. Frames are decoded in memory and discarded. Closing the panel stops the tracks immediately.</p>
+
+  <h2>Links you open</h2>
+  <p>Opening a decoded link leaves this site and is subject to that site's own policy. Links open with <code>rel="noopener noreferrer"</code>, so the destination does not learn where you came from.</p>
+
+  <h2>Contact</h2>
+  <p>Open an issue on the repository linked in the footer of the home page.</p>
+</div>
+</body>
+</html>
