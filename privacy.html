@@ -6,9 +6,23 @@
 <title>Privacy — qr-scanner</title>
 <meta name="description" content="qr-scanner has no upload endpoint, no analytics, and no cookies. Images are decoded in the browser tab.">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#FFFFFF">
+<script>
+(function () {
+  var KEY = 'qr-scanner-theme';
+  var saved = null;
+  try { saved = localStorage.getItem(KEY); } catch (e) {}
+  var systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  var theme = saved === 'light' || saved === 'dark' ? saved : (systemDark ? 'dark' : 'light');
+  document.documentElement.setAttribute('data-theme', theme);
+})();
+</script>
 <style>
 @font-face{font-family:Geist;src:url("assets/geist.woff2") format("woff2");font-weight:100 900;font-style:normal;font-display:swap}
-:root{--bg:#000;--surface:#181818;--line:#313131;--text:#F5F5F4;--muted:#9B9B9B;--dim:#6B6B6B;--accent:#D6FF4B;--accent-ink:#131209;--curve:cubic-bezier(0.22,1,0.36,1)}
+:root{--bg:#FFFFFF;--surface:#FAFAF9;--line:#E2E2DE;--text:#111110;--muted:#5C5C57;--dim:#8A8A83;--accent:#1E6F4E;--accent-ink:#FFFFFF;--curve:cubic-bezier(0.22,1,0.36,1)}
+:root[data-theme="dark"]{--bg:#000000;--surface:#181818;--line:#313131;--text:#F5F5F4;--muted:#9B9B9B;--dim:#6B6B6B;--accent:#D6FF4B;--accent-ink:#131209}
+html{color-scheme:light}
+:root[data-theme="dark"]{color-scheme:dark}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font-family:Geist,ui-sans-serif,system-ui,sans-serif;font-size:16px;line-height:24px;-webkit-font-smoothing:antialiased}
 .wrap{max-width:680px;margin:0 auto;padding:96px 24px 64px}

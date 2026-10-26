@@ -19,6 +19,10 @@ Live: https://22able22.github.io/qr-scanner/
 | `privacy.html`, `404.html` | Legal page and branded error page |
 | `manifest.webmanifest` | Installable on a phone home screen |
 
+## Theming
+
+Light and dark are both first class. The page follows `prefers-color-scheme` until the visitor presses the theme button, which overrides the system and is remembered in `localStorage` under `qr-scanner-theme`. The choice is applied by an inline script in `<head>` before first paint, so there is no flash of the wrong palette. Colours live in custom properties on `:root`, with the dark set on `:root[data-theme="dark"]`; `meta[name="theme-color"]` tracks the active theme so mobile browser chrome matches.
+
 ## Decode pipeline
 
 1. The file is drawn to a canvas, capped at 1600 px on the long edge, on a white backdrop so transparent PNGs still decode.

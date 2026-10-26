@@ -6,19 +6,33 @@
 <title>qr-scanner — page not found</title>
 <meta name="robots" content="noindex">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#FFFFFF">
+<script>
+(function () {
+  var KEY = 'qr-scanner-theme';
+  var saved = null;
+  try { saved = localStorage.getItem(KEY); } catch (e) {}
+  var systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  var theme = saved === 'light' || saved === 'dark' ? saved : (systemDark ? 'dark' : 'light');
+  document.documentElement.setAttribute('data-theme', theme);
+})();
+</script>
 <style>
 @font-face{font-family:Geist;src:url("assets/geist.woff2") format("woff2");font-weight:100 900;font-style:normal;font-display:swap}
-:root{--bg:#000;--surface:#181818;--line:#313131;--text:#F5F5F4;--muted:#9B9B9B;--dim:#6B6B6B;--accent:#D6FF4B;--accent-ink:#131209;--curve:cubic-bezier(0.22,1,0.36,1)}
+:root{--bg:#FFFFFF;--surface:#FAFAF9;--line:#E2E2DE;--text:#111110;--muted:#5C5C57;--dim:#8A8A83;--accent:#1E6F4E;--accent-ink:#FFFFFF;--accent-hover:#17593E;--heading-from:#000000;--heading-to:#6B6B66;--curve:cubic-bezier(0.22,1,0.36,1)}
+:root[data-theme="dark"]{--bg:#000000;--surface:#181818;--line:#313131;--text:#F5F5F4;--muted:#9B9B9B;--dim:#6B6B6B;--accent:#D6FF4B;--accent-ink:#131209;--accent-hover:#E2FF78;--heading-from:#FFFFFF;--heading-to:#9B9B9B}
+html{color-scheme:light}
+:root[data-theme="dark"]{color-scheme:dark}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font-family:Geist,ui-sans-serif,system-ui,sans-serif;font-size:16px;line-height:24px;display:grid;place-items:center;min-height:100vh;padding:24px;-webkit-font-smoothing:antialiased}
 .box{max-width:560px}
 .code{font-size:12px;line-height:16px;letter-spacing:0.08em;text-transform:uppercase;color:var(--dim)}
-h1{font-size:36px;line-height:40px;font-weight:600;letter-spacing:-0.03em;margin:16px 0 0;background:linear-gradient(90deg,#FFF,#9B9B9B);-webkit-background-clip:text;background-clip:text;color:transparent}
+h1{font-size:36px;line-height:40px;font-weight:600;letter-spacing:-0.03em;margin:16px 0 0;background:linear-gradient(90deg,var(--heading-from),var(--heading-to));-webkit-background-clip:text;background-clip:text;color:transparent}
 p{color:var(--muted);margin:16px 0 0;text-wrap:pretty}
 a.btn{display:inline-flex;margin-top:24px;background:var(--accent);color:var(--accent-ink);text-decoration:none;font-weight:600;padding:8px 12px;border-radius:12px;transition:transform 300ms var(--curve),background-color 300ms var(--curve)}
-a.btn:hover{background:#E2FF78}
+a.btn:hover{background:var(--accent-hover)}
 a.btn:active{transform:translateY(1px)}
-a.btn:focus-visible{outline:2px solid #fff;outline-offset:2px}
+a.btn:focus-visible{outline:2px solid var(--text);outline-offset:2px}
 </style>
 </head>
 <body>

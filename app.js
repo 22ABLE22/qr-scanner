@@ -12,6 +12,52 @@
   var result = document.getElementById('result');
   var zxingPromise = null;
 
+  /* ---------------- theme ---------------- */
+
+  var THEME_KEY = 'qr-scanner-theme';
+  var themeBtn = document.getElementById('theme-toggle');
+  var darkQuery = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+
+  function savedTheme() {
+    try {
+      var v = localStorage.getItem(THEME_KEY);
+      return v === 'light' || v === 'dark' ? v : null;
+    } catch (e) { return null; }
+  }
+
+  function applyTheme(theme, persist) {
+    document.documentElement.setAttribute('data-theme', theme);
+    if (themeBtn) {
+      themeBtn.setAttribute('aria-label', theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+      themeBtn.title = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+    }
+    // the meta theme colour drives the browser chrome on mobile, so keep it in sync
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', theme === 'dark' ? '#000000' : '#FFFFFF');
+    if (persist) {
+      try { localStorage.setItem(THEME_KEY, theme); } catch (e) {}
+    }
+  }
+
+  if (themeBtn) {
+    themeBtn.addEventListener('click', function () {
+      var now = document.documentElement.getAttribute('data-theme');
+      applyTheme(now === 'dark' ? 'light' : 'dark', true);
+    });
+  }
+
+  // Follow the system while the visitor has not picked a side, then stop overriding them.
+  if (darkQuery) {
+    var onSystemChange = function (e) {
+      if (!savedTheme()) applyTheme(e.matches ? 'dark' : 'light', false);
+    };
+    if (darkQuery.addEventListener) darkQuery.addEventListener('change', onSystemChange);
+    else if (darkQuery.addListener) darkQuery.addListener(onSystemChange);
+  }
+
+  // keep the toolbar label right on first paint
+  applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light', false);
+
   /* ---------------- helpers ---------------- */
 
   function bytes(n) {
