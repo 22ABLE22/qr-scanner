@@ -5,6 +5,12 @@
   'use strict';
 
   var MAX_SIDE = 1600;
+
+  // Optional resolver. When set, links that land on a redirect gateway are followed
+  // server side with a phone User-Agent, which a browser cannot do itself.
+  // Leave empty to disable; the page then just reports the decoded text.
+  var RESOLVER_URL = 'https://qr-resolver.caorunhe1102.workers.dev/';
+
   var drop = document.getElementById('drop');
   var fileInput = document.getElementById('file');
   var pickBtn = document.getElementById('pick');
@@ -141,6 +147,36 @@
     return 'Plain text';
   }
 
+  /* ---------------- resolver ---------------- */
+
+  // Storage hosts we treat as a real destination.
+  var STORAGE_RE = /pan\.quark\.cn|pan\.baidu\.com|aliyundrive\.com|alipan\.com|115\.com|pan\.xunlei\.com|cloud\.189\.cn|caiyun\.139\.com|drive\.google\.com|mega\.nz|dropbox\.com|1drv\.ms/i;
+
+  function isStorageLink(url) {
+    return STORAGE_RE.test(url);
+  }
+
+  // Ask the Worker where a link really goes. Resolves to null when unavailable.
+  async function resolveLink(url) {
+    if (!RESOLVER_URL) return null;
+    var ctrl = new AbortController();
+    var timer = setTimeout(function () { ctrl.abort(); }, 20000);
+    try {
+      var res = await fetch(RESOLVER_URL + '?url=' + encodeURIComponent(url), {
+        signal: ctrl.signal,
+        cache: 'no-store'
+      });
+      if (!res.ok) return null;
+      var data = await res.json();
+      if (!data || !data.ok) return null;
+      return data;
+    } catch (e) {
+      return null;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
   /* ---------------- UI ---------------- */
 
   function clear() {
@@ -192,6 +228,7 @@
           '<button class="btn btn-ghost" type="button" id="save">Save as .txt</button>' +
         '</div>' +
         '<p class="engine">' + escapeHTML(meta.engine) + ' · ' + escapeHTML(meta.size) + ' · ' + meta.ms + ' ms</p>' +
+        (isLink ? '<div class="resolve" id="resolve" hidden></div>' : '') +
       '</div>';
 
     var copyBtn = document.getElementById('copy');
@@ -217,7 +254,74 @@
       a.click();
       setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
     });
+
+    if (isLink) resolveInto(first.text);
   }
+
+  /* Follow a decoded link to its real destination and render that, when the
+     resolver says the link was only a gateway. */
+  async function resolveInto(text) {
+    var box = document.getElementById('resolve');
+    if (!box || !RESOLVER_URL) return;
+
+    // A direct storage link needs no round trip.
+    if (isStorageLink(text)) return;
+
+    box.hidden = false;
+    box.innerHTML = '<p class="resolve-status">Checking where this link goes</p>';
+
+    var data = await resolveLink(text);
+
+    if (!data) {
+      box.innerHTML = '<p class="resolve-status dim">Could not reach the resolver. The decoded link is above.</p>';
+      return;
+    }
+
+    if (data.resolved) {
+      var real = data.finalUrl;
+      var extra = (data.links || []).filter(function (l) { return l !== real; });
+      var realIsStorage = isStorageLink(real);
+
+      box.innerHTML =
+        '<div class="resolve-head"><span class="tag ok">Real destination</span>' +
+          (realIsStorage ? '<span class="kind">Storage link</span>' : '') + '</div>' +
+        '<div class="out" id="real-url">' + escapeHTML(real) + '</div>' +
+        '<div class="row">' +
+          '<button class="btn btn-primary" type="button" id="copy-real">Copy link</button>' +
+          '<a class="btn btn-ghost" href="' + escapeHTML(real) + '" target="_blank" rel="noopener noreferrer">Open</a>' +
+        '</div>' +
+        (extra.length ? '<div class="resolve-head"><span class="tag">Also found</span></div>' +
+          extra.map(function (l) { return '<div class="out">' + escapeHTML(l) + '</div>'; }).join('') : '') +
+        '<p class="engine">' + data.redirects.length + ' hop' + (data.redirects.length === 1 ? '' : 's') +
+          ' · resolved through a phone User-Agent</p>';
+
+      var cb = document.getElementById('copy-real');
+      if (cb) cb.addEventListener('click', function () {
+        var done = function () {
+          cb.textContent = 'Copied';
+          setTimeout(function () { cb.textContent = 'Copy link'; }, 1600);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(real).then(done, function () { legacyCopy(real); done(); });
+        } else { legacyCopy(real); done(); }
+      });
+      return;
+    }
+
+    if (data.expired) {
+      box.innerHTML = '<p class="resolve-status dim">This gateway link has expired. These links last about 10 minutes, ' +
+        'so get a fresh one and decode it again.</p>';
+      return;
+    }
+
+    if (data.blocked) {
+      box.innerHTML = '<p class="resolve-status dim">The gateway still hid the destination behind a phone check.</p>';
+      return;
+    }
+
+    box.innerHTML = '<p class="resolve-status dim">This link does not redirect anywhere else.</p>';
+  }
+
 
   function legacyCopy(text) {
     var ta = document.createElement('textarea');

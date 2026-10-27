@@ -298,6 +298,20 @@ h1{
 .error{border-color:var(--error-line);background:var(--error-bg)}
 .error .tag{color:var(--error-text)}
 
+/* resolver result */
+.resolve{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
+.resolve-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.resolve .out{margin-bottom:8px}
+.resolve .row{margin-top:0}
+.resolve-status{font-size:14px;line-height:20px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.resolve-status::before{
+  content:"";width:6px;height:6px;border-radius:999px;background:var(--accent);
+  flex:none;animation:pulse 1.4s var(--curve) infinite;
+}
+.resolve-status.dim::before{animation:none;background:var(--dim)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.25}}
+@media (prefers-reduced-motion:reduce){.resolve-status::before{animation:none}}
+
 /* ---------- tagline reveal ---------- */
 .tagline{padding:96px 0 40px}
 .tagline p{
