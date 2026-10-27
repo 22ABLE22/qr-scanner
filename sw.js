@@ -1,7 +1,7 @@
 /* qr-scanner service worker.
    Strategy: precache the shell and the fast decoder; cache the WebAssembly engine the first
    time a hard image pulls it in. Bump CACHE when any asset changes. */
-const CACHE = 'qr-scanner-v4';
+const CACHE = 'qr-scanner-v5';
 const SHELL = [
   './',
   './index.html',

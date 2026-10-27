@@ -41,20 +41,22 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px;back
 <div class="wrap">
   <a class="back" href="./">← Back to the decoder</a>
   <h1>Privacy</h1>
-  <p>Last updated 26 October 2026.</p>
+  <p>Last updated 27 October 2026.</p>
 
   <h2>What happens to your image</h2>
   <p>Nothing leaves the tab. The file is opened with the browser File API, drawn onto a canvas, and the pixels are handed to a decoder that runs in the same page. There is no upload endpoint anywhere in the code, so there is no server that could receive a picture.</p>
 
   <h2>What is stored</h2>
   <ul>
-    <li>No cookies, no local storage, no session storage.</li>
+    <li>No cookies, no session storage.</li>
     <li>No analytics, no pixels, no third party scripts.</li>
+    <li>One <code>localStorage</code> entry, <code>qr-scanner-theme</code>, records whether you chose the light or dark palette. It holds that one word and nothing else, and is only written after you press the theme button.</li>
     <li>A service worker caches the page and the decoder files so the tool works offline. The cache holds code only, never an image you dropped.</li>
   </ul>
 
   <h2>Network requests the page makes</h2>
-  <p>On a first visit it fetches its own files from the same origin: HTML, one font, the stylesheet, <code>jsQR.js</code>, and the service worker. The 1 MB WebAssembly engine is fetched only if the fast decoder fails on your image. There are no calls to any other host.</p>
+  <p>On a first visit it fetches its own files from the same origin: HTML, one font, the stylesheet, <code>jsQR.js</code>, and the service worker. The 1 MB WebAssembly engine is fetched only if the fast decoder fails on your image.</p>
+  <p>One optional request leaves this origin. When a decoded link points at an intermediate redirect page, the page sends that link to a small resolver service, which requests it server side and reports the destination. Only the link itself is sent, never the image. If you would rather not make that request, the resolver can be disabled in the source and the page then simply shows the decoded text.</p>
 
   <h2>Camera</h2>
   <p>The camera is opened only after you press the camera button, and the permission prompt comes from your browser. Frames are decoded in memory and discarded. Closing the panel stops the tracks immediately.</p>
