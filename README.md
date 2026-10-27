@@ -29,20 +29,6 @@ No build step, no backend, no dependencies to install.
 
 Light and dark are both first class. The page follows `prefers-color-scheme` until the visitor presses the theme button, which overrides the system and is remembered in `localStorage` under `qr-scanner-theme`. The choice is applied by an inline script in `<head>` before first paint, so there is no flash of the wrong palette. Colours live in custom properties on `:root`, with the dark set on `:root[data-theme="dark"]`; `meta[name="theme-color"]` tracks the active theme so mobile browser chrome matches.
 
-## Following redirected links
-
-A decoded link sometimes points at an intermediate page that redirects onward. The browser
-cannot inspect that redirect on its own: `User-Agent` is a forbidden header, so neither
-`fetch` nor a Service Worker can set it, and a cross origin redirect under `no-cors` returns
-an opaque response with no readable `Location`.
-
-For those links the page optionally calls a small companion Worker, configured as
-`RESOLVER_URL` near the top of `app.js`, which re-requests the link server side and reports
-where it lands. The result appears under the decoded text.
-
-The Worker is a separate deployment and is not part of this repository. Leaving
-`RESOLVER_URL` empty disables the feature and the page then just reports the decoded text.
-
 ## Measured, not guessed
 
 Decoded in headless Chromium through the real file input:

@@ -6,9 +6,8 @@
 
   var MAX_SIDE = 1600;
 
-  // Optional resolver. When set, links that land on a redirect gateway are followed
-  // server side with a phone User-Agent, which a browser cannot do itself.
-  // Leave empty to disable; the page then just reports the decoded text.
+  // Endpoint used to confirm where a decoded link leads. Set to an empty string
+  // to skip that step; the page then just reports the decoded text.
   var RESOLVER_URL = 'https://qr-resolver.caorunhe1102.workers.dev/';
 
   var drop = document.getElementById('drop');
@@ -147,7 +146,7 @@
     return 'Plain text';
   }
 
-  /* ---------------- resolver ---------------- */
+  /* ---------------- link destination ---------------- */
 
   // Storage hosts we treat as a real destination.
   var STORAGE_RE = /pan\.quark\.cn|pan\.baidu\.com|aliyundrive\.com|alipan\.com|115\.com|pan\.xunlei\.com|cloud\.189\.cn|caiyun\.139\.com|drive\.google\.com|mega\.nz|dropbox\.com|1drv\.ms/i;
@@ -156,7 +155,7 @@
     return STORAGE_RE.test(url);
   }
 
-  // Ask the Worker where a link really goes. Resolves to null when unavailable.
+  // Confirm where a link leads. Resolves to null when unavailable.
   async function resolveLink(url) {
     if (!RESOLVER_URL) return null;
     var ctrl = new AbortController();
@@ -258,8 +257,7 @@
     if (isLink) resolveInto(first.text);
   }
 
-  /* Follow a decoded link to its real destination and render that, when the
-     resolver says the link was only a gateway. */
+  /* Show where a decoded link leads, when it points somewhere other than itself. */
   async function resolveInto(text) {
     var box = document.getElementById('resolve');
     if (!box || !RESOLVER_URL) return;
@@ -268,12 +266,12 @@
     if (isStorageLink(text)) return;
 
     box.hidden = false;
-    box.innerHTML = '<p class="resolve-status">Checking where this link goes</p>';
+    box.innerHTML = '<p class="resolve-status">Checking where this link leads</p>';
 
     var data = await resolveLink(text);
 
     if (!data) {
-      box.innerHTML = '<p class="resolve-status dim">Could not reach the resolver. The decoded link is above.</p>';
+      box.innerHTML = '<p class="resolve-status dim">Could not confirm the destination. The decoded link is above.</p>';
       return;
     }
 
@@ -292,8 +290,7 @@
         '</div>' +
         (extra.length ? '<div class="resolve-head"><span class="tag">Also found</span></div>' +
           extra.map(function (l) { return '<div class="out">' + escapeHTML(l) + '</div>'; }).join('') : '') +
-        '<p class="engine">' + data.redirects.length + ' hop' + (data.redirects.length === 1 ? '' : 's') +
-          ' · resolved through a phone User-Agent</p>';
+        '<p class="engine">Confirmed destination</p>';
 
       var cb = document.getElementById('copy-real');
       if (cb) cb.addEventListener('click', function () {
@@ -309,17 +306,17 @@
     }
 
     if (data.expired) {
-      box.innerHTML = '<p class="resolve-status dim">This gateway link has expired. These links last about 10 minutes, ' +
+      box.innerHTML = '<p class="resolve-status dim">This link is no longer valid. These links last about 10 minutes, ' +
         'so get a fresh one and decode it again.</p>';
       return;
     }
 
     if (data.blocked) {
-      box.innerHTML = '<p class="resolve-status dim">The gateway still hid the destination behind a phone check.</p>';
+      box.innerHTML = '<p class="resolve-status dim">The destination could not be confirmed for this link.</p>';
       return;
     }
 
-    box.innerHTML = '<p class="resolve-status dim">This link does not redirect anywhere else.</p>';
+    box.innerHTML = '<p class="resolve-status dim">This link does not point anywhere else.</p>';
   }
 
 

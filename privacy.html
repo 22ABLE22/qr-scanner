@@ -56,7 +56,7 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px;back
 
   <h2>Network requests the page makes</h2>
   <p>On a first visit it fetches its own files from the same origin: HTML, one font, the stylesheet, <code>jsQR.js</code>, and the service worker. The 1 MB WebAssembly engine is fetched only if the fast decoder fails on your image.</p>
-  <p>One optional request leaves this origin. When a decoded link points at an intermediate redirect page, the page sends that link to a small resolver service, which requests it server side and reports the destination. Only the link itself is sent, never the image. If you would rather not make that request, the resolver can be disabled in the source and the page then simply shows the decoded text.</p>
+  <p>The image is never sent anywhere. The only thing that can leave this page is the text of a link you just decoded, and only when the page needs to confirm where that link leads. That text is sent to a service operated with this site, is not stored, and is not linked to you. Nothing else about you or your device is included.</p>
 
   <h2>Camera</h2>
   <p>The camera is opened only after you press the camera button, and the permission prompt comes from your browser. Frames are decoded in memory and discarded. Closing the panel stops the tracks immediately.</p>
