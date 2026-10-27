@@ -148,16 +148,23 @@
 
   /* ---------------- link destination ---------------- */
 
-  // Storage hosts we treat as a real destination.
-  var STORAGE_RE = /pan\.quark\.cn|pan\.baidu\.com|aliyundrive\.com|alipan\.com|115\.com|pan\.xunlei\.com|cloud\.189\.cn|caiyun\.139\.com|drive\.google\.com|mega\.nz|dropbox\.com|1drv\.ms/i;
+  // Only links under these prefixes are ever sent for confirmation. Everything else
+  // is reported as decoded and nothing leaves the page.
+  var RESOLVE_PREFIXES = [
+    'https://www.haozy.top/documents/redir/',
+    'http://www.haozy.top/documents/redir/'
+  ];
 
-  function isStorageLink(url) {
-    return STORAGE_RE.test(url);
+  function needsResolve(url) {
+    for (var i = 0; i < RESOLVE_PREFIXES.length; i++) {
+      if (url.indexOf(RESOLVE_PREFIXES[i]) === 0) return true;
+    }
+    return false;
   }
 
   // Confirm where a link leads. Resolves to null when unavailable.
   async function resolveLink(url) {
-    if (!RESOLVER_URL) return null;
+    if (!RESOLVER_URL || !needsResolve(url)) return null;
     var ctrl = new AbortController();
     var timer = setTimeout(function () { ctrl.abort(); }, 20000);
     try {
@@ -227,7 +234,7 @@
           '<button class="btn btn-ghost" type="button" id="save">Save as .txt</button>' +
         '</div>' +
         '<p class="engine">' + escapeHTML(meta.engine) + ' · ' + escapeHTML(meta.size) + ' · ' + meta.ms + ' ms</p>' +
-        (isLink ? '<div class="resolve" id="resolve" hidden></div>' : '') +
+        (isLink && needsResolve(first.text) ? '<div class="resolve" id="resolve" hidden></div>' : '') +
       '</div>';
 
     var copyBtn = document.getElementById('copy');
@@ -257,13 +264,13 @@
     if (isLink) resolveInto(first.text);
   }
 
-  /* Show where a decoded link leads, when it points somewhere other than itself. */
+  /* Confirm the destination of a link, for the prefixes that need it. */
   async function resolveInto(text) {
+    // Nothing outside the allowed prefixes is ever requested.
+    if (!needsResolve(text)) return;
+
     var box = document.getElementById('resolve');
     if (!box || !RESOLVER_URL) return;
-
-    // A direct storage link needs no round trip.
-    if (isStorageLink(text)) return;
 
     box.hidden = false;
     box.innerHTML = '<p class="resolve-status">Checking where this link leads</p>';
@@ -278,11 +285,9 @@
     if (data.resolved) {
       var real = data.finalUrl;
       var extra = (data.links || []).filter(function (l) { return l !== real; });
-      var realIsStorage = isStorageLink(real);
 
       box.innerHTML =
-        '<div class="resolve-head"><span class="tag ok">Real destination</span>' +
-          (realIsStorage ? '<span class="kind">Storage link</span>' : '') + '</div>' +
+        '<div class="resolve-head"><span class="tag ok">Real destination</span></div>' +
         '<div class="out" id="real-url">' + escapeHTML(real) + '</div>' +
         '<div class="row">' +
           '<button class="btn btn-primary" type="button" id="copy-real">Copy link</button>' +
