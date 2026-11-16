@@ -165,22 +165,27 @@
   // Confirm where a link leads. Resolves to null when unavailable.
   async function resolveLink(url) {
     if (!RESOLVER_URL || !needsResolve(url)) return null;
-    var ctrl = new AbortController();
-    var timer = setTimeout(function () { ctrl.abort(); }, 20000);
-    try {
-      var res = await fetch(RESOLVER_URL + '?url=' + encodeURIComponent(url), {
-        signal: ctrl.signal,
-        cache: 'no-store'
-      });
-      if (!res.ok) return null;
-      var data = await res.json();
-      if (!data || !data.ok) return null;
-      return data;
-    } catch (e) {
-      return null;
-    } finally {
-      clearTimeout(timer);
+    // one retry for transient failures, then give up
+    for (var attempt = 0; attempt < 2; attempt++) {
+      var ctrl = new AbortController();
+      var timer = setTimeout(function () { ctrl.abort(); }, 30000);
+      try {
+        var res = await fetch(RESOLVER_URL + '?url=' + encodeURIComponent(url), {
+          signal: ctrl.signal,
+          cache: 'no-store'
+        });
+        if (!res.ok) return null;
+        var data = await res.json();
+        if (!data || !data.ok) return null;
+        return data;
+      } catch (e) {
+        // timeout or network error: try once more
+        if (attempt === 1) return null;
+      } finally {
+        clearTimeout(timer);
+      }
     }
+    return null;
   }
 
   /* ---------------- UI ---------------- */
